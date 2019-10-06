@@ -249,8 +249,9 @@ class Reader extends React.Component {
       const ctx = canvas.getContext('2d')
 
       ctx.drawImage(preview, hozOffset, vertOffset, width, height)
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const sx = (width / 2) - (100 / 2);
+      const sy = (height / 2) - (100 / 2);
+      const imageData = ctx.getImageData(sx, sy, 100, 100)
       // Send data to web-worker
       this.worker.postMessage(imageData)
     } else {
