@@ -1,7 +1,9 @@
 const { NoVideoInputDevicesError } = require('./errors')
 
-function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode) {
-  console.log('I am the default device ID thing, I return a bunch of devices apparently', filteredDevices);
+function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode, chosenCamera) {
+  if (chosenCamera !== '') {
+    return chosenCamera
+  }
   if (filteredDevices.length > 0) {
     return filteredDevices[0].deviceId
   }
@@ -14,12 +16,11 @@ function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode) {
 const getFacingModePattern = facingMode =>
   facingMode === 'environment' ? /rear|back|environment/gi : /front|user|face/gi
 
-function getDeviceId (facingMode, chooseDeviceId = defaultDeviceIdChooser) {
+function getDeviceId (facingMode, chosenCamera, chooseDeviceId = defaultDeviceIdChooser) {
   // Get manual deviceId from available devices.
   return new Promise((resolve, reject) => {
     let enumerateDevices
     try {
-      console.log('Log all enumerated devices', enumerateDevices);
       enumerateDevices = navigator.mediaDevices.enumerateDevices()
     } catch (err) {
       reject(new NoVideoInputDevicesError())
@@ -36,13 +37,12 @@ function getDeviceId (facingMode, chooseDeviceId = defaultDeviceIdChooser) {
       }
 
       const pattern = getFacingModePattern(facingMode)
-
       // Filter out video devices without the pattern
       const filteredDevices = videoDevices.filter(({ label }) =>
         pattern.test(label)
       )
 
-      resolve(chooseDeviceId(filteredDevices, videoDevices, facingMode))
+      resolve(chooseDeviceId(filteredDevices, videoDevices, facingMode, chosenCamera))
     })
   })
 }
