@@ -19,8 +19,8 @@ function getDeviceId (facingMode, chooseDeviceId = defaultDeviceIdChooser) {
   return new Promise((resolve, reject) => {
     let enumerateDevices
     try {
-      enumerateDevices = navigator.mediaDevices.enumerateDevices()
       console.log('Log all enumerated devices', enumerateDevices);
+      enumerateDevices = navigator.mediaDevices.enumerateDevices()
     } catch (err) {
       reject(new NoVideoInputDevicesError())
     }
