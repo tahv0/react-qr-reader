@@ -1,6 +1,7 @@
 const { NoVideoInputDevicesError } = require('./errors')
 
 function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode) {
+  console.log('I am the default device ID thing, I return a bunch of devices apparently', filteredDevices);
   if (filteredDevices.length > 0) {
     return filteredDevices[0].deviceId
   }
