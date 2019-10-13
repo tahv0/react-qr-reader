@@ -167,7 +167,6 @@ class Reader extends React.Component {
  }
 
   handleVideo (stream) {
-    console.log('Stream', stream);
     const { preview } = this.els
     const { facingMode } = this.props
 
