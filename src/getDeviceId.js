@@ -1,6 +1,8 @@
 const { NoVideoInputDevicesError } = require('./errors')
 
 function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode, chosenCamera) {
+  // the user has chosen their own deviceID so return that
+  // otherwise do the usual flow
   if (chosenCamera !== '') {
     return chosenCamera
   }
