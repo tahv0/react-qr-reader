@@ -153,30 +153,20 @@ class Reader extends React.Component {
       constraints.frameRate = { ideal: 25, min: 10 }
     }
     // if prop 'chosenCamera' is present with info
-    // dont do this isFirefox, object assign etc stuff
-    // just pass the id provided to this.handleVideo
-    if (chosenCamera === "") {      
-      const vConstraintsPromise =
-        isFirefox
-          ? Promise.resolve(props.constraints || constraints)
-          : getDeviceId(facingMode, chosenCamera).then(deviceId =>
-            Object.assign({}, { deviceId }, props.constraints))
-      vConstraintsPromise
-        .then(video => navigator.mediaDevices.getUserMedia({ video }))
-        .then(this.handleVideo)
-        .catch(onError)
-    }
-    else {
-      const vConstraintsPromise = getDeviceId(facingMode, chosenCamera).then((deviceId) => Object.assign({}, { deviceId }, props.constraints))
-      vConstraintsPromise
-        .then(video => navigator.mediaDevices.getUserMedia({ video }))
-        .then(this.handleVideo)
-        .catch(onError)
-    }
+    // use that camera instead and
+    // just pass the id provided to this.handleVideo      
+    const vConstraintsPromise =
+      isFirefox
+        ? Promise.resolve(props.constraints || constraints)
+        : getDeviceId(facingMode, chosenCamera).then(deviceId =>
+          Object.assign({}, { deviceId }, props.constraints))
+    vConstraintsPromise
+      .then(video => navigator.mediaDevices.getUserMedia({ video }))
+      .then(this.handleVideo)
+      .catch(onError)
  }
 
   handleVideo (stream) {
-    console.log('Stream', stream);
     const { preview } = this.els
     const { facingMode } = this.props
 
