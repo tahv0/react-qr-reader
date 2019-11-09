@@ -134,7 +134,7 @@ class Reader extends React.Component {
     const { onError, facingMode, chosenCamera } = props
 
     // Check browser facingMode constraint support
-    // Firefox ignores facingMode or deviceId constraints
+    // Firefox ignores facingMode or deviceIdok constraints
     const isFirefox = /firefox/i.test(navigator.userAgent)
     let supported = {}
     let enumerateDevices = {}
@@ -154,8 +154,20 @@ class Reader extends React.Component {
     }
     // if prop 'chosenCamera' is present with info
     // use that camera instead and
-    // just pass the id provided to this.handleVideo      
+    // just pass the id provided to this.handleVideo  
+    if (chosenCamera === '' || chosenCamera === 'undefined'){  
     const vConstraintsPromise =
+      supported.facingMode || isFirefox
+        ? Promise.resolve(props.constraints || constraints)
+        : getDeviceId(facingMode, chosenCamera).then(deviceId =>
+          Object.assign({}, { deviceId }, props.constraints))
+    vConstraintsPromise
+      .then(video => navigator.mediaDevices.getUserMedia({ video }))
+      .then(this.handleVideo)
+      .catch(onError)
+    }
+    else {
+      const vConstraintsPromise =
       isFirefox
         ? Promise.resolve(props.constraints || constraints)
         : getDeviceId(facingMode, chosenCamera).then(deviceId =>
@@ -164,6 +176,7 @@ class Reader extends React.Component {
       .then(video => navigator.mediaDevices.getUserMedia({ video }))
       .then(this.handleVideo)
       .catch(onError)
+    }
  }
 
   handleVideo (stream) {

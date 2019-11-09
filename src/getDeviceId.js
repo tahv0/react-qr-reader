@@ -7,11 +7,14 @@ function defaultDeviceIdChooser (filteredDevices, videoDevices, facingMode, chos
     return chosenCamera
   }
   if (filteredDevices.length > 0) {
+    alert('if statement2');
     return filteredDevices[0].deviceId
   }
   if (videoDevices.length === 1 || facingMode === 'user') {
+    alert('if statement3');
     return videoDevices[0].deviceId
   }
+  alert('none of these lame ass ifs worked');
   return videoDevices[1].deviceId
 }
 
