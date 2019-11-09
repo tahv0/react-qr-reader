@@ -1,8 +1,9 @@
-const React = require('react')
-const PropTypes = require('prop-types')
-const { getDeviceId } = require('./getDeviceId')
-const havePropsChanged = require('./havePropsChanged')
-const createBlob = require('./createBlob')
+const React = require('react');
+const PropTypes = require('prop-types');
+const { getDefaultDeviceId, getIdDirectly } = require('./getDeviceId');
+const havePropsChanged = require('./havePropsChanged');
+const createBlob = require('./createBlob');
+const { isIOS } = require('react-device-detect');
 
 // Require adapter to support older browser implementations
 require('webrtc-adapter')
@@ -154,29 +155,22 @@ class Reader extends React.Component {
     }
     // if prop 'chosenCamera' is present with info
     // use that camera instead and
-    // just pass the id provided to this.handleVideo  
-    if (chosenCamera === '' || chosenCamera === 'undefined'){  
-    const vConstraintsPromise =
+    // just pass the id provided to this.handleVideo
+    let vConstraintsPromise;
+    if (chosenCamera === '' || isIOS){  
+    vConstraintsPromise =
       supported.facingMode || isFirefox
         ? Promise.resolve(props.constraints || constraints)
-        : getDeviceId(facingMode, chosenCamera).then(deviceId =>
+        : getDefaultDeviceId(facingMode).then(deviceId =>
           Object.assign({}, { deviceId }, props.constraints))
-    vConstraintsPromise
-      .then(video => navigator.mediaDevices.getUserMedia({ video }))
-      .then(this.handleVideo)
-      .catch(onError)
     }
     else {
-      const vConstraintsPromise =
-      isFirefox
-        ? Promise.resolve(props.constraints || constraints)
-        : getDeviceId(facingMode, chosenCamera).then(deviceId =>
-          Object.assign({}, { deviceId }, props.constraints))
-    vConstraintsPromise
-      .then(video => navigator.mediaDevices.getUserMedia({ video }))
-      .then(this.handleVideo)
-      .catch(onError)
+      vConstraintsPromise = getIdDirectly(facingMode, chosenCamera).then(deviceId => Object.assign({}, { deviceId }, props.constraints));
     }
+    vConstraintsPromise
+    .then(video => navigator.mediaDevices.getUserMedia({ video }))
+    .then(this.handleVideo)
+    .catch(onError)
  }
 
   handleVideo (stream) {
