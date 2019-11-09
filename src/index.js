@@ -1,8 +1,9 @@
-const React = require('react')
-const PropTypes = require('prop-types')
-const { getDeviceId } = require('./getDeviceId')
-const havePropsChanged = require('./havePropsChanged')
-const createBlob = require('./createBlob')
+const React = require('react');
+const PropTypes = require('prop-types');
+const { getDefaultDeviceId, getIdDirectly } = require('./getDeviceId');
+const havePropsChanged = require('./havePropsChanged');
+const createBlob = require('./createBlob');
+const { isIOS } = require('react-device-detect');
 
 // Require adapter to support older browser implementations
 require('webrtc-adapter')
@@ -12,9 +13,8 @@ require('webrtc-adapter')
 let workerBlob = createBlob([__inline('../lib/worker.js')], {
   type: 'application/javascript',
 })
-
 // Props that are allowed to change dynamicly
-const propsKeys = ['delay', 'facingMode']
+const propsKeys = ['delay', 'facingMode', 'chosenCamera']
 
 const containerStyle = {
   overflow: 'hidden',
@@ -76,10 +76,11 @@ class Reader extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     // React according to change in props
+    // Rerender when specificCamera changes too
     const changedProps = havePropsChanged(this.props, nextProps, propsKeys)
 
     for (const prop of changedProps) {
-      if (prop === 'facingMode') {
+      if (prop === 'facingMode' || prop === 'chosenCamera') {
         this.clearComponent()
         this.initiate(nextProps)
         break
@@ -131,12 +132,13 @@ class Reader extends React.Component {
   }
 
   initiate (props = this.props) {
-    const { onError, facingMode } = props
+    const { onError, facingMode, chosenCamera } = props
 
     // Check browser facingMode constraint support
-    // Firefox ignores facingMode or deviceId constraints
+    // Firefox ignores facingMode or deviceIdok constraints
     const isFirefox = /firefox/i.test(navigator.userAgent)
     let supported = {}
+    let enumerateDevices = {}
     if (
       navigator.mediaDevices &&
       typeof navigator.mediaDevices.getSupportedConstraints === 'function'
@@ -151,18 +153,25 @@ class Reader extends React.Component {
     if (supported.frameRate) {
       constraints.frameRate = { ideal: 25, min: 10 }
     }
-
-    const vConstraintsPromise =
+    // if prop 'chosenCamera' is present with info
+    // use that camera instead and
+    // just pass the id provided to this.handleVideo
+    let vConstraintsPromise;
+    if (chosenCamera === '' || isIOS){  
+    vConstraintsPromise =
       supported.facingMode || isFirefox
         ? Promise.resolve(props.constraints || constraints)
-        : getDeviceId(facingMode).then(deviceId =>
+        : getDefaultDeviceId(facingMode).then(deviceId =>
           Object.assign({}, { deviceId }, props.constraints))
-
+    }
+    else {
+      vConstraintsPromise = getIdDirectly(facingMode, chosenCamera).then(deviceId => Object.assign({}, { deviceId }, props.constraints));
+    }
     vConstraintsPromise
-      .then(video => navigator.mediaDevices.getUserMedia({ video }))
-      .then(this.handleVideo)
-      .catch(onError)
-  }
+    .then(video => navigator.mediaDevices.getUserMedia({ video }))
+    .then(this.handleVideo)
+    .catch(onError)
+ }
 
   handleVideo (stream) {
     const { preview } = this.els
@@ -249,7 +258,8 @@ class Reader extends React.Component {
       const ctx = canvas.getContext('2d')
 
       ctx.drawImage(preview, hozOffset, vertOffset, width, height)
-
+      // const sx = (width / 2) - (100 / 2);
+      // const sy = (height / 2) - (100 / 2);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       // Send data to web-worker
       this.worker.postMessage(imageData)
@@ -309,6 +319,7 @@ Reader.propTypes = {
   onLoad: PropTypes.func,
   delay: PropTypes.oneOfType([PropTypes.number, PropTypes.bool]),
   facingMode: PropTypes.oneOf(['user', 'environment']),
+  chosenCamera: PropTypes.string,
   resolution: PropTypes.number,
   showViewFinder: PropTypes.bool,
   style: PropTypes.any,
@@ -320,6 +331,7 @@ Reader.defaultProps = {
   delay: 500,
   resolution: 600,
   facingMode: 'environment',
+  chosenCamera: '',
   showViewFinder: true,
   constraints: null,
 }
